@@ -90,9 +90,9 @@ window_h = 640
 display = (window_w, window_h)
 bg_color = "#303030"
 
-
+#Счет
 pygame.init()
-font = pygame.font.SysFont(None, 40)
+font = pygame.font.SysFont(None, 38)
 
 
 #Движение объектов
@@ -518,7 +518,8 @@ def main():
         m_left3, m_right3 = monster_motion(3)
 
 
-        text = font.render(str(hero.score), True, (225, 225, 225))
+        text = font.render('Score: ' + str(hero.score), True, (225, 225, 225))
+        text2 = font.render('Score: ' + 'X', True, (225, 225, 225))
         screen.blit(bg, (0,0))
         hero.update(left, right, space, camera)
         villain[0].update(m_left0, m_right0, camera)
@@ -530,8 +531,9 @@ def main():
             screen.blit(e.image, camera.apply(e))
         screen.blit(header, (0, 0))
         screen.blit(coin_s, (40, 5))
-        screen.blit(villain[i].image, (200, 8))
-        screen.blit(text, (80, 8))
+        screen.blit(villain[i].image, (400, 8))
+        screen.blit(text, (80, 9))
+        screen.blit(text2, (460, 9))
         pygame.display.update()
 
 
