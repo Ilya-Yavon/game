@@ -3,9 +3,6 @@ from pygame import Surface, mixer, Color, Rect, QUIT, KEYDOWN, K_LEFT, K_RIGHT, 
 import pyganim
 import random
 
-pygame.init()
-font = pygame.font.SysFont(None, 40)
-
 #Звук
 mixer.pre_init(44100, -16, 1, 512)
 mixer.init()
@@ -92,6 +89,10 @@ window_w = 800
 window_h = 640
 display = (window_w, window_h)
 bg_color = "#303030"
+
+
+pygame.init()
+font = pygame.font.SysFont(None, 40)
 
 
 #Движение объектов
@@ -291,11 +292,9 @@ class Character(Objects):
                     record = map.level.pop(number_of_line)
                     if p.rect.x > coordinate_x:
                         record = record[:number_of_column] + ' ' + record[(number_of_column+1):]
-                self.coin_sound.play()
+                        self.coin_sound.play()
                 map.level.insert(number_of_line, record)
-                self.score += 1
-                # print(p.rect)
-                # import pdb; pdb.set_trace();                     
+                self.score += 1                 
 
 
 #Платформа
