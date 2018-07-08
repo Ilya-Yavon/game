@@ -1,8 +1,10 @@
 import pygame
-from pygame import Surface, Color, Rect, QUIT, KEYDOWN, K_LEFT, K_RIGHT, KEYUP, K_SPACE
-from pygame import mixer
+from pygame import Surface, mixer, Color, Rect, QUIT, KEYDOWN, K_LEFT, K_RIGHT, KEYUP, K_SPACE
 import pyganim
 import random
+
+pygame.init()
+font = pygame.font.SysFont(None, 40)
 
 #Звук
 mixer.pre_init(44100, -16, 1, 512)
@@ -83,6 +85,7 @@ coin_width = 15
 coin_height = 15
 coin_color = "#FFFF00"
 coin_texture = pygame.image.load('C:/project/coin.png')
+coin_s = pygame.image.load('C:/project/coin_s.png')
 
 #Характеристики фона
 window_w = 800
@@ -174,9 +177,7 @@ class Monster(Objects):
 class Character(Objects):
     def __init__(self, x, y):
         super().__init__(x, y)
-        self.a = 0
-        self.b = 0
-        self.c = 0
+        self.score = 0
         self.image = Surface((WIDTH, HEIGHT))
         self.image.fill(Color(COLOR))
         self.rect = Rect(x, y, WIDTH, HEIGHT)
@@ -252,9 +253,8 @@ class Character(Objects):
 "                         ", "                         ",
 "                         ", "                         ",
 "                         ", "                         ",
-"                         ",
+"                         ", "                         ",
                        "-------------------------",
-                       "-                       -",
                        "-                       -",
                        "-                       -",
                        "- ----- ---- ----- ---- -",
@@ -264,12 +264,12 @@ class Character(Objects):
                        "- ----- -  - - - - ---- -",
                        "-                       -",
                        "-                       -",
+                       "-                       -",
                        "- ---- -  - ---- ---- - -",
                        "- -  - -  - -    -  - - -",
                        "- -  - -  - ---  ---  - -",
                        "- -  - -  - -    -  -   -",
                        "- ----  --  ---- -  - - -",
-                       "-                       -",
                        "-                       -",
                        "-                       -",
                        "-------------------------"]
@@ -291,12 +291,11 @@ class Character(Objects):
                     record = map.level.pop(number_of_line)
                     if p.rect.x > coordinate_x:
                         record = record[:number_of_column] + ' ' + record[(number_of_column+1):]
-                        self.coin_sound.play()
+                self.coin_sound.play()
                 map.level.insert(number_of_line, record)
-                self.a += 1
-            print(self.a)
+                self.score += 1
                 # print(p.rect)
-                # import pdb; pdb.set_trace();
+                # import pdb; pdb.set_trace();                     
 
 
 #Платформа
@@ -322,8 +321,6 @@ class Coin(pygame.sprite.Sprite):
 #Камера        
 class Map(object):
     def __init__(self):
-        self.b = 0
-        self.a = 162
         #Уровень
         self.level = []
         for vertical in range(9):
@@ -441,8 +438,9 @@ class Map(object):
 def main():
     pygame.init()
     screen = pygame.display.set_mode(display)
-    pygame.display.set_caption("Square")
+    pygame.display.set_caption("Game")
     bg = Surface((window_w, window_h))
+    header = Surface((window_w, 40))
 
 
     hero = Character(50, 840)
@@ -467,6 +465,7 @@ def main():
 
 
     bg.fill(Color(bg_color))
+    header.fill(Color('#202020'))
     #Основной цикл
     while 1:
         timer.tick(60)
@@ -499,6 +498,7 @@ def main():
             number_of_line = villain[i].rect.y // PLATFORM_HEIGHT
             number_of_column1 = (villain[i].rect.x + monster_width) // PLATFORM_WIDTH
             number_of_column2 = villain[i].rect.x // PLATFORM_WIDTH
+            number_of_column3 = (villain[i].rect.x + PLATFORM_HEIGHT-1) // PLATFORM_WIDTH
             record1 = camera.level[number_of_line+1]
             record2 = camera.level[number_of_line]
             try:
@@ -506,7 +506,7 @@ def main():
                     m_right[i] = True
                 else:
                     m_right[i] = False
-                if record1[number_of_column2] == '-' and m_right[i] == False and record2[number_of_column1-2] != '-':
+                if record1[number_of_column2] == '-' and m_right[i] == False and record2[number_of_column3-1] != '-':
                     m_left[i] = True
                 else:
                     m_left[i] = False
@@ -519,6 +519,7 @@ def main():
         m_left3, m_right3 = monster_motion(3)
 
 
+        text = font.render(str(hero.score), True, (225, 225, 225))
         screen.blit(bg, (0,0))
         hero.update(left, right, space, camera)
         villain[0].update(m_left0, m_right0, camera)
@@ -528,7 +529,10 @@ def main():
         camera.update(hero, villain)
         for e in camera.entities:
             screen.blit(e.image, camera.apply(e))
-
+        screen.blit(header, (0, 0))
+        screen.blit(coin_s, (40, 5))
+        screen.blit(villain[i].image, (200, 8))
+        screen.blit(text, (80, 8))
         pygame.display.update()
 
 
