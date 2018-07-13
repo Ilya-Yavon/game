@@ -1,3 +1,4 @@
+#Моули
 import pygame
 from pygame import Surface, mixer, Color, Rect, QUIT, KEYDOWN, K_LEFT, K_RIGHT, KEYUP, K_SPACE
 import pyganim
@@ -66,7 +67,7 @@ ANIMATION_JUMP_RIGHT = [('C:/project/hero_right3.png', 1)]
 #                 ('C:/project/monster2.png')]
 
 #Характеристики монстров
-monster_speed = 3.5
+monster_speed = 3
 monster_width = 44
 monster_height = 24
 monster_color = "#000000"
@@ -82,7 +83,6 @@ coin_width = 15
 coin_height = 15
 coin_color = "#FFFF00"
 coin_texture = pygame.image.load('C:/project/coin.png')
-coin_s = pygame.image.load('C:/project/coin_s.png')
 
 #Характеристики фона
 window_w = 800
@@ -93,9 +93,11 @@ bg_color = "#303030"
 #Счет
 pygame.init()
 font = pygame.font.SysFont(None, 38)
+coin_s = pygame.image.load('C:/project/coin_s.png')
+heart = pygame.image.load('C:/project/heart.png')
 
 
-#Движение объектов
+#Объекты
 class Objects(pygame.sprite.Sprite):
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
@@ -105,6 +107,7 @@ class Objects(pygame.sprite.Sprite):
         self.startY = y
         self.onGround = False
 
+    #Движение объектов
     def update(self, left, right, map):
         if not self.onGround:
             self.yvel +=  GRAVITY
@@ -117,8 +120,7 @@ class Objects(pygame.sprite.Sprite):
         self.rect.x += self.xvel
         self.collide(self.xvel, 0, map)
 
-        limit = -100
-        if map.state > Rect(0, limit, 800, 704) and map.state != Rect(0, 0, 800, 896):
+        if map.state > Rect(0, -100, 800, 704) and map.state != Rect(0, 0, 800, 896):
             self.rect.y += 3*PLATFORM_HEIGHT
 
     #Столкновение с платформами
@@ -142,7 +144,7 @@ class Objects(pygame.sprite.Sprite):
                     self.yvel = 0
 
 
-#Движение монстра
+#Монстр
 class Monster(Objects):
     def __init__(self, x, y):
         super().__init__(x, y)
@@ -157,6 +159,7 @@ class Monster(Objects):
         # self.boltAnimMonster = pyganim.PygAnimation(boltAnim)
         # self.boltAnimMonster.play()
 
+    #Движение монстра
     def update(self, left, right, map):
         if left:
             self.xvel = -monster_speed
@@ -173,12 +176,17 @@ class Monster(Objects):
 
         if self.rect.y > 862:
             self.rect.y -= 27*PLATFORM_HEIGHT
+            self.rect.x == random.randint(32, 724)
+
 
 #Персонаж
 class Character(Objects):
     def __init__(self, x, y):
         super().__init__(x, y)
+        self.sound_play = True
+        self.life = 3
         self.score = 0
+        self.score2 = 0
         self.image = Surface((WIDTH, HEIGHT))
         self.image.fill(Color(COLOR))
         self.rect = Rect(x, y, WIDTH, HEIGHT)
@@ -208,6 +216,9 @@ class Character(Objects):
         self.jump_sound = mixer.Sound('C:/project/jump.wav')
         self.game_over_sound = mixer.Sound('C:/project/game_over.wav')
         self.coin_sound = mixer.Sound('C:/project/coin.wav')
+        self.monster_kill = mixer.Sound('C:/project/monster_kill.wav')
+        self.life_sound = mixer.Sound('C:/project/life.wav')
+        self.heart_sound = mixer.Sound('C:/project/heart.wav')
 
     #Движение персонажа
     def update(self, left, right, space, map):
@@ -274,27 +285,50 @@ class Character(Objects):
                        "-                       -",
                        "-                       -",
                        "-------------------------"]
-        if self.rect.y > 1000 and self.rect.y < 1015:
-            self.game_over_sound.play()
+        if self.rect.y > 1000:
+            if self.sound_play == True:
+                self.game_over_sound.play()
+                self.sound_play = False
         if self.rect.y > 40000:
             raise SystemExit
 
-    #Подбор монет
+    #Подбор монет и взаимодействие с монстром
     def collide(self, xvel, yvel, map):
         super().collide(xvel, yvel, map)
-        for p in map.coins:
-            number_of_line = p.rect.y // PLATFORM_HEIGHT
+        for c in map.coins:
+            number_of_line = c.rect.y // PLATFORM_HEIGHT
             coordinate_y = number_of_line * PLATFORM_HEIGHT
-            number_of_column = p.rect.x // PLATFORM_WIDTH
+            number_of_column = c.rect.x // PLATFORM_WIDTH
             coordinate_x = number_of_column * PLATFORM_WIDTH
-            if pygame.sprite.collide_rect(self, p):
-                if p.rect.y > coordinate_y:
+            if pygame.sprite.collide_rect(self, c):
+                if c.rect.y > coordinate_y:
                     record = map.level.pop(number_of_line)
-                    if p.rect.x > coordinate_x:
+                    if c.rect.x > coordinate_x:
                         record = record[:number_of_column] + ' ' + record[(number_of_column+1):]
                         self.coin_sound.play()
                 map.level.insert(number_of_line, record)
-                self.score += 1                 
+                self.score += 1
+
+        for m in map.villain:
+            if pygame.sprite.collide_rect(self, m):
+                if self.rect.bottom <= m.rect.top + 9:
+                    self.yvel = -5
+                    m.rect.y -= 27*PLATFORM_HEIGHT
+                    m.rect.x == random.randint(32, 724)
+                    self.monster_kill.play()
+                    self.score2 += 1
+                else:
+                    self.life -= 1
+                    m.rect.y -= 27*PLATFORM_HEIGHT
+                    m.rect.x == random.randint(32, 724)
+                    if self.life > 0:
+                        self.life_sound.play()
+                if self.life == 0:
+                    self.rect.y = 1000
+                if self.score2 == 10:
+                    self.life += 1
+                    self.heart_sound.play()
+                    self.score2 = 0
 
 
 #Платформа
@@ -339,12 +373,10 @@ class Map(object):
             self.level.append('-                       -')
             line = '-'
             while len(line) != 24:
-                line += random.choice([' ', ' ', ' ', ' ',
-                   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-                   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-                   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-                   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-                   ' ', ' ', ' ', ' ', ' ', ' ', ' ', '*'])
+                if random.random() > 0.022:
+                    line += ' '
+                else:
+                    line += '*'
             line += '-'
             self.level.append(line)
         self.level.append('-------------------------')
@@ -357,13 +389,16 @@ class Map(object):
         self.entities = pygame.sprite.Group()
         self.platforms = []
         self.coins = []
+        self.villain = []
+        for i in range(4):
+            self.villain.append(Monster(random.randint(32, 724), random.randint(32, 672)))
     
     def apply(self, target):
         return target.rect.move(self.state.topleft)
 
-    def update(self, target, villain):
+    #Генерация уровня
+    def update(self, target):
         self.state = self.camera_configure(self.state, target.rect)
-        #Генерация уровня
         limit = -100
         if self.state > Rect(0, limit, 800, 896):
             number = '-'
@@ -379,11 +414,10 @@ class Map(object):
             number = '-' + number + '-'
             line = '-'
             while len(line) != 24:
-                line += random.choice([' ', ' ', ' ', ' ',
-                   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-                   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-                   ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-                   ' ', ' ', ' ', ' ', ' ', ' ', ' ', '*'])
+                if random.random() > 0.022:
+                    line += ' '
+                else:
+                    line += '*'
             line += '-'
             self.level.insert(0, line)
             self.level.insert(0, '-                       -')
@@ -395,7 +429,7 @@ class Map(object):
         self.platforms = []
         self.coins = []
         self.entities.add(target)
-        self.entities.add(villain)
+        self.entities.add(self.villain)
 
         x = y = 0
         w = 0
@@ -439,25 +473,19 @@ def main():
     screen = pygame.display.set_mode(display)
     pygame.display.set_caption("Game")
     bg = Surface((window_w, window_h))
-    header = Surface((window_w, 40))
+    header = Surface((window_w, window_h / 16))
 
 
     hero = Character(50, 840)
-    villain = []
-    for i in range(4):
-        villain.append(Monster(random.randint(32, 724), random.randint(32, 672)))
+    camera = Map()
+    camera.entities.add(hero)
     space = left = right = False
     m_left = []
     m_right = []
-    for i in range(4):
+    for i in range(len(camera.villain)):
         m_left.append(False)
         m_right.append(False)
     #up = down = False
-
-    
-    camera = Map()
-    camera.entities.add(hero)
-    camera.entities.add(villain)
 
 
     timer = pygame.time.Clock()
@@ -493,11 +521,12 @@ def main():
             if e.type == KEYUP and e.key == K_SPACE:
                 space = False
         
+        #Логика движения монстров
         def monster_motion(i):
-            number_of_line = villain[i].rect.y // PLATFORM_HEIGHT
-            number_of_column1 = (villain[i].rect.x + monster_width) // PLATFORM_WIDTH
-            number_of_column2 = villain[i].rect.x // PLATFORM_WIDTH
-            number_of_column3 = (villain[i].rect.x + PLATFORM_HEIGHT-1) // PLATFORM_WIDTH
+            number_of_line = camera.villain[i].rect.y // PLATFORM_HEIGHT
+            number_of_column1 = (camera.villain[i].rect.x + monster_width) // PLATFORM_WIDTH
+            number_of_column2 = camera.villain[i].rect.x // PLATFORM_WIDTH
+            number_of_column3 = (camera.villain[i].rect.x + PLATFORM_HEIGHT-1) // PLATFORM_WIDTH
             record1 = camera.level[number_of_line+1]
             record2 = camera.level[number_of_line]
             try:
@@ -518,22 +547,30 @@ def main():
         m_left3, m_right3 = monster_motion(3)
 
 
+        #Блитирование и обновление объектов
         text = font.render('Score: ' + str(hero.score), True, (225, 225, 225))
-        text2 = font.render('Score: ' + 'X', True, (225, 225, 225))
+        text2 = font.render('x' + str(hero.life), True, (225, 225, 225))
         screen.blit(bg, (0,0))
         hero.update(left, right, space, camera)
-        villain[0].update(m_left0, m_right0, camera)
-        villain[1].update(m_left1, m_right1, camera)
-        villain[2].update(m_left2, m_right2, camera)
-        villain[3].update(m_left3, m_right3, camera)
-        camera.update(hero, villain)
+        camera.villain[0].update(m_left0, m_right0, camera)
+        camera.villain[1].update(m_left1, m_right1, camera)
+        camera.villain[2].update(m_left2, m_right2, camera)
+        camera.villain[3].update(m_left3, m_right3, camera)
+        camera.update(hero)
         for e in camera.entities:
             screen.blit(e.image, camera.apply(e))
         screen.blit(header, (0, 0))
         screen.blit(coin_s, (40, 5))
-        screen.blit(villain[i].image, (400, 8))
+        if 4 > hero.life > 2:
+            screen.blit(heart, (730, 8))
+        if 4 > hero.life > 1:
+            screen.blit(heart, (700, 8))
+        if 4 > hero.life > 0:
+            screen.blit(heart, (670, 8))
+        if hero.life > 3:
+            screen.blit(heart, (700, 8))
+            screen.blit(text2, (730, 9))
         screen.blit(text, (80, 9))
-        screen.blit(text2, (460, 9))
         pygame.display.update()
 
 
