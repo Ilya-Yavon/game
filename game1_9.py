@@ -557,9 +557,9 @@ def main():
         text = font.render('Score: ' + str(hero.score), True, (225, 225, 225))
         text2 = font.render('x' + str(hero.life), True, (225, 225, 225))
         if hero.still > 1:
-            text3 = font2.render('Kill another ' + str(hero.still) + ' monsters to get 1 heart.', True, (100, 100, 100))
+            text3 = font2.render('Kill another ' + str(hero.still) + ' monsters to get one more health.', True, (100, 100, 100))
         else:
-            text3 = font2.render('Kill another ' + str(hero.still) + ' monster to get 1 heart.', True, (100, 100, 100))
+            text3 = font2.render('Kill another ' + str(hero.still) + ' monster to get one more health.', True, (100, 100, 100))
         screen.blit(bg, (0,0))
         hero.update(left, right, space, camera)
         camera.villain[0].update(m_left0, m_right0, camera)
@@ -582,7 +582,7 @@ def main():
             screen.blit(text2, (730, 9))
         screen.blit(text, (80, 9))
         if camera.level != game_over_screen:
-            screen.blit(text3, (250, 12))
+            screen.blit(text3, (230, 12))
         pygame.display.update()
 
 
